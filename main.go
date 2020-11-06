@@ -36,10 +36,16 @@ func main() {
 		log.Fatal("not found")
 	}
 	fmt.Println(n.Subject)
+	for k, v := range n.PredicateObject {
+		n := g.FindNode(k)
+		if n == nil {
+			fmt.Printf("\t%v: %v\n", k, v)
+		}
+	}
 	it := g.DirectedGraph.To(n.ID())
 	for it.Next() {
 		to := it.Node().(*graph.Node)
 		e := g.Edge(to.ID(), n.ID()).(graph.Edge)
-		fmt.Printf("%v -> %v -> %v\n", n.Subject, e.Term, to.Subject)
+		fmt.Printf("\t\t-> %v -> %v\n", e.Term, to.Subject)
 	}
 }
