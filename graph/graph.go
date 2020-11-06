@@ -42,9 +42,9 @@ func NewGraph(rdfGraph *rdf.Graph) Graph {
 	// create the nodes
 	for s, po := range tree {
 		n := &Node{
-			id:             g.NewNode().ID(),
-			Subject:        s,
-			PredicatObject: po,
+			id:              g.NewNode().ID(),
+			Subject:         s,
+			PredicateObject: po,
 		}
 		g.AddNode(n)
 		reference[s] = n
@@ -88,9 +88,9 @@ type Graph struct {
 
 // Node is a node of the graph, it carries n tuple associated with one subject
 type Node struct {
-	id             int64
-	Subject        rdf.Term
-	PredicatObject map[rdf.Term][]rdf.Term
+	id              int64
+	Subject         rdf.Term
+	PredicateObject map[rdf.Term][]rdf.Term
 }
 
 // ID of the node
