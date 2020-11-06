@@ -31,7 +31,7 @@ func main() {
 	}
 	g := graph.NewGraph(parser)
 
-	n := g.FindNode(rdf.NewIRI("http://schema.org/PostalAddress"))
+	n := g.FindNode(rdf.NewIRI(os.Args[1]))
 	if n == nil {
 		log.Fatal("not found")
 	}
