@@ -6,7 +6,7 @@ import (
 	"os"
 
 	rdf "github.com/deiu/gon3"
-	"github.com/owulveryck/rdf2raph/graph"
+	"github.com/owulveryck/rdf2graph/graph"
 )
 
 type dict map[string]rdf.Term
@@ -31,15 +31,15 @@ func main() {
 	}
 	g := graph.NewGraph(parser)
 
-	n, ok := g.FindNode(rdf.NewIRI("http://schema.org/PostalAddress"))
-	if !ok {
+	n := g.FindNode(rdf.NewIRI("http://schema.org/PostalAddress"))
+	if n == nil {
 		log.Fatal("not found")
 	}
 	fmt.Println(n.Subject)
 	it := g.DirectedGraph.To(n.ID())
 	for it.Next() {
-		to := it.Node().(*node)
-		e := g.Edge(to.ID(), n.ID()).(edge)
-		fmt.Printf("%v -> %v -> %v\n", n.Subject, e.term, to.Subject)
+		to := it.Node().(*graph.Node)
+		e := g.Edge(to.ID(), n.ID()).(graph.Edge)
+		fmt.Printf("%v -> %v -> %v\n", n.Subject, e.Term, to.Subject)
 	}
 }

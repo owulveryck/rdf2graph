@@ -62,10 +62,10 @@ func NewGraph(rdfGraph *rdf.Graph) Graph {
 					if me == to {
 						continue
 					}
-					e := edge{
+					e := Edge{
 						F:    me,
 						T:    to,
-						term: predicate,
+						Term: predicate,
 					}
 					g.SetEdge(e)
 				}
@@ -98,22 +98,25 @@ func (n *Node) ID() int64 {
 	return n.id
 }
 
-type edge struct {
+// Edge ...
+type Edge struct {
 	F, T graph.Node
-	term rdf.Term
+	Term rdf.Term
 }
 
-func (e edge) From() graph.Node {
+// From ...
+func (e Edge) From() graph.Node {
 	return e.F
 }
 
-func (e edge) To() graph.Node {
+// To ...
+func (e Edge) To() graph.Node {
 	return e.T
 }
 
 // ReversedEdge returns a new Edge with the F and T fields
 // swapped.
-func (e edge) ReversedEdge() graph.Edge { return edge{F: e.T, T: e.F, term: e.term} }
+func (e Edge) ReversedEdge() graph.Edge { return Edge{F: e.T, T: e.F, Term: e.Term} }
 
 // FindNode returns a node whose Term match t's rawstring
 // it returns nil if no matching node is found
