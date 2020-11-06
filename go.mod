@@ -1,4 +1,4 @@
-module github.com/dktunited/member-schema
+module github.com/owulveryck/rdf2graph
 
 go 1.15
 
