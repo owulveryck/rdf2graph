@@ -14,3 +14,7 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 rdf2graph
+bla.png
+bla.svg
+schemaorg-all-https copy.jsonld
+client/schemaorg-current-http copy.ttl

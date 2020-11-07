@@ -3,14 +3,16 @@ package graph
 import (
 	"log"
 
-	rdf "github.com/deiu/gon3"
+	rdf "github.com/owulveryck/gon3"
 	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/iterator"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
-type dict map[string]rdf.Term
+// Dict reference a term by its rawvalue
+type Dict map[string]rdf.Term
 
-func (d dict) getOrInsert(t rdf.Term) rdf.Term {
+func (d Dict) getOrInsert(t rdf.Term) rdf.Term {
 	if t, ok := d[t.RawValue()]; ok {
 		return t
 	}
@@ -23,7 +25,7 @@ func NewGraph(rdfGraph *rdf.Graph) Graph {
 
 	// tree is a map of subjects, containing predicates referencing objects
 	tree := make(map[rdf.Term]map[rdf.Term][]rdf.Term)
-	termDict := dict(make(map[string]rdf.Term))
+	termDict := Dict(make(map[string]rdf.Term))
 	for s := range rdfGraph.IterTriples() {
 		subject := termDict.getOrInsert(s.Subject)
 		predicate := termDict.getOrInsert(s.Predicate)
@@ -75,6 +77,7 @@ func NewGraph(rdfGraph *rdf.Graph) Graph {
 	}
 	return Graph{
 		DirectedGraph: g,
+		Dict:          termDict,
 		Reference:     reference,
 	}
 }
@@ -84,39 +87,25 @@ type Graph struct {
 	*simple.DirectedGraph
 	// Reference of the term and their associated nodes
 	Reference map[rdf.Term]*Node
+	// Dict ...
+	Dict map[string]rdf.Term
 }
 
-// Node is a node of the graph, it carries n tuple associated with one subject
-type Node struct {
-	id              int64
-	Subject         rdf.Term
-	PredicateObject map[rdf.Term][]rdf.Term
+// ToWithEdges return al the nodes reaching n with an edge whosh subject is one of ts
+func (g *Graph) ToWithEdges(n *Node, ts ...rdf.Term) graph.Nodes {
+	nodes := make(map[int64]graph.Node)
+	it := g.DirectedGraph.To(n.ID())
+	for it.Next() {
+		to := it.Node().(*Node)
+		e := g.Edge(to.ID(), n.ID()).(Edge)
+		for i := range ts {
+			if e.Term.Equals(ts[i]) {
+				nodes[to.ID()] = to
+			}
+		}
+	}
+	return iterator.NewNodes(nodes)
 }
-
-// ID of the node
-func (n *Node) ID() int64 {
-	return n.id
-}
-
-// Edge ...
-type Edge struct {
-	F, T graph.Node
-	Term rdf.Term
-}
-
-// From ...
-func (e Edge) From() graph.Node {
-	return e.F
-}
-
-// To ...
-func (e Edge) To() graph.Node {
-	return e.T
-}
-
-// ReversedEdge returns a new Edge with the F and T fields
-// swapped.
-func (e Edge) ReversedEdge() graph.Edge { return Edge{F: e.T, T: e.F, Term: e.Term} }
 
 // FindNode returns a node whose Term match t's rawstring
 // it returns nil if no matching node is found
