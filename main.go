@@ -24,11 +24,13 @@ func main() {
 	baseURI := "https://example.org/foo"
 	// Create a new graph
 
-	parser, err := rdf.NewParser(baseURI).Parse(os.Stdin)
+	parser := rdf.NewParser(baseURI)
+	gr, err := parser.Parse(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}
-	g := graph.NewGraph(parser)
+	fmt.Println(parser.GetNamespaces())
+	g := graph.NewGraph(gr)
 	rdfType, ok := g.Dict["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"]
 	if !ok {
 		log.Fatal("Term not present in the graph: ", "rdfType")
