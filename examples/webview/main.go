@@ -2,14 +2,18 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 
 	rdf "github.com/owulveryck/gon3"
 	"github.com/owulveryck/rdf2graph/graph"
+	"gonum.org/v1/gonum/graph/encoding/dot"
+	"gonum.org/v1/gonum/graph/simple"
 )
 
 var colors = []string{
@@ -19,7 +23,15 @@ var colors = []string{
 	"#d0efff",
 }
 
+var dotExe string
+
 func main() {
+
+	var err error
+	dotExe, err = exec.LookPath("dot")
+	if err != nil {
+		log.Println("dot not found, no graph will be generated")
+	}
 	// Set a base URI
 	baseURI := "https://example.org/foo"
 	// Create a new graph
@@ -60,13 +72,36 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, `<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>`)
 	fmt.Fprint(w, "</head>")
 	fmt.Fprint(w, "<body>")
-	fmt.Fprintf(w, "<h1>%v</h1>", n.Subject.RawValue())
+	fmt.Fprintf(w, "<h1>%v</h1><br>", n.Subject.RawValue())
+	// GetProperties
+
+	rdfsType := h.g.Dict["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"]
+	rdfClass := h.g.Dict["http://www.w3.org/2000/01/rdf-schema#Class"]
+	decathlonOrganization := h.g.Dict["http://decathlon.net/inOrganization"]
+	it := h.g.DirectedGraph.From(n.ID())
+	for it.Next() {
+		nn := it.Node().(*graph.Node)
+		e := h.g.DirectedGraph.Edge(n.ID(), nn.ID()).(graph.Edge)
+		if e.Term.Equals(decathlonOrganization) {
+			if nn.PredicateObject[rdfsType][0].Equals(rdfClass) {
+				fmt.Fprintf(w, `<h3>In Organization: <a href="%v">%v</a></h3><br>`,
+					h.minifyHREF(nn.Subject),
+					h.minifyHREF(nn.Subject))
+			}
+		}
+	}
+
 	fmt.Fprint(w, `<table border="1" style="border: 1px #ccc;">`)
 	fmt.Fprint(w, "<thead>")
 	fmt.Fprint(w, `<tr><th>Property</th><th>Type</th><th><Description></th></tr>`)
 	fmt.Fprint(w, "</thead>")
 	h.processNode(n, w, make([]*graph.Node, 0))
 	fmt.Fprint(w, "</table>")
+	fmt.Fprint(w, `<h1>Graph</h1>`)
+	err = h.renderDot(w, n)
+	if err != nil {
+		log.Println(err)
+	}
 	fmt.Fprint(w, `<h1>Object</h1>`)
 	fmt.Fprint(w, `<pre>`)
 	fmt.Fprintln(w, n.Subject.RawValue())
@@ -78,6 +113,46 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprint(w, `</pre>`)
 	fmt.Fprint(w, "</body></html>")
+}
+
+func (h *handler) renderDot(w io.Writer, n *graph.Node) error {
+	g := &graph.Graph{
+		DirectedGraph: simple.NewDirectedGraph(),
+	}
+	g.AddNode(n)
+	it := h.g.From(n.ID())
+	for it.Next() {
+		from := it.Node()
+		g.AddNode(from)
+		g.SetEdge(h.g.Edge(n.ID(), from.ID()))
+	}
+	it = h.g.To(n.ID())
+	for it.Next() {
+		to := it.Node()
+		g.AddNode(to)
+		g.SetEdge(h.g.Edge(to.ID(), n.ID()))
+	}
+	cmd := exec.Command(dotExe, "-Tsvg")
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+	go func() {
+		defer stdin.Close()
+		// Writes the data to stdin.
+		b, err := dot.Marshal(g, "test", "", "")
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		io.WriteString(stdin, string(b))
+	}()
+	writeCmd, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+	io.WriteString(w, string(writeCmd))
+	return nil
 }
 
 func (h *handler) processNode(n *graph.Node, w http.ResponseWriter, visited []*graph.Node) {
@@ -142,7 +217,6 @@ func (h *handler) processNode(n *graph.Node, w http.ResponseWriter, visited []*g
 		//h.processNode(prop,w)
 
 		fmt.Fprint(w, "</tbody>")
-		log.Println(visited)
 	default:
 		fmt.Fprintf(w, "This is something else:\n %v", n)
 	}

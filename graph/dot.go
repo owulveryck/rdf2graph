@@ -26,7 +26,11 @@ func (e Edge) Attributes() []encoding.Attribute {
 		Key:   "label",
 		Value: e.Term.String(),
 	}
-	return []encoding.Attribute{label}
+	fontsize := encoding.Attribute{
+		Key:   "fontsize",
+		Value: "10",
+	}
+	return []encoding.Attribute{label, fontsize}
 }
 
 const tmpl = `<

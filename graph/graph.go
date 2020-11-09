@@ -117,3 +117,13 @@ func (g *Graph) FindNode(t rdf.Term) *Node {
 	}
 	return nil
 }
+
+// GetTerm returns the term matching s (short forms are expanded according to the namespaces of the graph)
+func (g *Graph) GetTerm(s string) rdf.Term {
+	for k, v := range g.Dict {
+		if k == s {
+			return v
+		}
+	}
+	return nil
+}
