@@ -18,3 +18,7 @@ bla.png
 bla.svg
 schemaorg-all-https copy.jsonld
 client/schemaorg-current-http copy.ttl
+examples/webview/webview
+examples/webview/webview.darwin
+examples/webview/.DS_Store
+examples/.DS_Store
