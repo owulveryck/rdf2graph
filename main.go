@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	rdf "github.com/deiu/gon3"
+	rdf "github.com/owulveryck/gon3"
 	"github.com/owulveryck/rdf2graph/graph"
 )
 
@@ -22,14 +22,35 @@ func (d dict) getOrInsert(t rdf.Term) rdf.Term {
 func main() {
 	// Set a base URI
 	baseURI := "https://example.org/foo"
-	//rdfType := rdf.NewIRI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 	// Create a new graph
 
-	parser, err := rdf.NewParser(baseURI).Parse(os.Stdin)
+	parser := rdf.NewParser(baseURI)
+	gr, err := parser.Parse(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}
-	g := graph.NewGraph(parser)
+	fmt.Println(parser.GetNamespaces())
+	g := graph.NewGraph(gr)
+	rdfType, ok := g.Dict["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"]
+	if !ok {
+		log.Fatal("Term not present in the graph: ", "rdfType")
+	}
+	schemaOrgRangeInclude, ok := g.Dict["http://schema.org/rangeIncludes"]
+	if !ok {
+		log.Fatal("Term not present in the graph: ", "rangeInclude")
+	}
+	schemaOrgDomainIncludes, ok := g.Dict["http://schema.org/domainIncludes"]
+	if !ok {
+		log.Fatal("Term not present in the graph: ", "domainIncludes")
+	}
+	rdfsSubClassOf, ok := g.Dict["http://www.w3.org/2000/01/rdf-schema#subClassOf"]
+	if !ok {
+		log.Fatal("Term not present in the graph: ", "rdfsSubClassOf")
+	}
+	rdfProperty, ok := g.Dict["http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"]
+	if !ok {
+		log.Fatal("Term not present in the graph: ", "rdfProperty")
+	}
 
 	n := g.FindNode(rdf.NewIRI(os.Args[1]))
 	if n == nil {
@@ -48,4 +69,16 @@ func main() {
 		e := g.Edge(to.ID(), n.ID()).(graph.Edge)
 		fmt.Printf("\t\t-> %v -> %v\n", e.Term, to.Subject)
 	}
+	/*
+		b, err := dot.Marshal(g.DirectedGraph, "test", " ", " ")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(string(b))
+	*/
+	_ = rdfProperty
+	_ = rdfType
+	_ = schemaOrgDomainIncludes
+	_ = schemaOrgRangeInclude
+	_ = rdfsSubClassOf
 }

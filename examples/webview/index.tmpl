@@ -1,0 +1,59 @@
+{{ define "main" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <title>Result</title>
+</head>
+<body>  
+    <table>
+        <thead>
+            <tr>
+                <th>Property</th>
+                <th>Type</th>
+                <th><Description></th>
+                {{ template "rdfs:type rdfs:Class" . }}
+            </tr>
+        </thead>
+    </table>
+</body>
+</html>
+{{ end }}
+
+{{ define "rdfs:type rdfs:Property" }}
+<tr>
+    <td>
+        <a href="{{ .Node.Subject.RawValue | minifyhref }}">{{ index (.Objects "http://www.w3.org/2000/01/rdf-schema#label") 0 }}</a>
+    </td>
+    <td>
+        {{ range .Objects "http://schema.org/rangeIncludes" }}
+            {{ . }}<br>
+        {{ end }}
+    </td>
+    <td>
+        {{ index (.Objects "http://www.w3.org/2000/01/rdf-schema#comment") 0 }}
+    </td>
+</tr>
+{{ end }}
+
+{{ define "rdfs:type rdfs:Class" }}
+<tbody>
+    <tr>
+        <td colspan="3">
+            <b>Properties from: <a href="{{ .Node.Subject.RawValue | minifyhref}}">{{ .Node.Subject.RawValue | minifyhref}}</a></b>
+            <pre>{{ index (.Objects "http://www.w3.org/2000/01/rdf-schema#label") 0 }}</pre>
+            {{- range .To }}
+                {{- if .HasPredicate "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"}}
+                    {{ template "rdfs:type rdfs:Property" . -}}
+                {{ end -}}
+            {{ end -}}
+            {{- range .From }}
+                {{- if .HasPredicate "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" "http://www.w3.org/2000/01/rdf-schema#Class" }} 
+                    {{ template "rdfs:type rdfs:Class" . -}}
+                {{ end -}}
+            {{ end -}}
+        </td>
+    </tr>
+</tbody>
+{{ end }}
