@@ -12,6 +12,13 @@ import (
 	"github.com/owulveryck/rdf2graph/graph"
 )
 
+var colors = []string{
+	//"#1167b1",
+	"#187bcd",
+	"#2a9df4",
+	"#d0efff",
+}
+
 func main() {
 	// Set a base URI
 	baseURI := "https://example.org/foo"
@@ -58,8 +65,18 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "<thead>")
 	fmt.Fprint(w, `<tr><th>Property</th><th>Type</th><th><Description></th></tr>`)
 	fmt.Fprint(w, "</thead>")
-	h.processNode(n, w, nil)
+	h.processNode(n, w, make([]*graph.Node, 0))
 	fmt.Fprint(w, "</table>")
+	fmt.Fprint(w, `<h1>Object</h1>`)
+	fmt.Fprint(w, `<pre>`)
+	fmt.Fprintln(w, n.Subject.RawValue())
+	for k, v := range n.PredicateObject {
+		fmt.Fprintf(w, "\t%v:\n", k.RawValue())
+		for _, v := range v {
+			fmt.Fprintf(w, "\t\t%v\n", v.RawValue())
+		}
+	}
+	fmt.Fprint(w, `</pre>`)
 	fmt.Fprint(w, "</body></html>")
 }
 
@@ -91,7 +108,12 @@ func (h *handler) processNode(n *graph.Node, w http.ResponseWriter, visited []*g
 		fmt.Fprint(w, "</tr>")
 
 	case rdfClass:
-		fmt.Fprint(w, `<tbody style="border: 1px solid #ccc;">`)
+		visited = append(visited, n)
+		color := "white"
+		if len(visited) < len(colors) {
+			color = colors[len(visited)]
+		}
+		fmt.Fprintf(w, `<tbody style="border: 1px solid #ccc; background: %v;">`, color)
 		fmt.Fprintf(w, `<tr><td colspan="3"><b>Properties from: <a href="%v">%v</a></b> <pre>%v</pre></td></tr>`,
 			h.minifyHREF(n.Subject),
 			h.minifyHREF(n.Subject),
@@ -104,7 +126,7 @@ func (h *handler) processNode(n *graph.Node, w http.ResponseWriter, visited []*g
 			e := h.g.DirectedGraph.Edge(nn.ID(), n.ID()).(graph.Edge)
 			if e.Term.Equals(rdfDomainIncludes) {
 				if nn.PredicateObject[rdfsType][0].Equals(rdfProperty) {
-					h.processNode(nn, w, nil)
+					h.processNode(nn, w, visited)
 				}
 			}
 		}
@@ -113,17 +135,17 @@ func (h *handler) processNode(n *graph.Node, w http.ResponseWriter, visited []*g
 		for it.Next() {
 			n := it.Node().(*graph.Node)
 			if n.PredicateObject[rdfsType][0].Equals(rdfClass) {
-				h.processNode(n, w, nil)
+				h.processNode(n, w, visited)
 			}
 		}
 		//var class *graph.Node
 		//h.processNode(prop,w)
 
 		fmt.Fprint(w, "</tbody>")
+		log.Println(visited)
 	default:
 		fmt.Fprintf(w, "This is something else:\n %v", n)
 	}
-
 }
 
 // minifyHREF returns a string with the nameprefix
