@@ -7,7 +7,7 @@
     <title>Result</title>
 </head>
 <body>  
-    <table>
+    <table class="blueTable">
         <thead>
             <tr>
                 <th>Property</th>
@@ -28,7 +28,7 @@
     </td>
     <td>
         {{ range .Objects "http://schema.org/rangeIncludes" }}
-            {{ . }}<br>
+            <a href="{{ . | minifyhref }}">{{ . | minifyhref }}</a><br>
         {{ end }}
     </td>
     <td>
@@ -48,7 +48,7 @@
                     {{ template "rdfs:type rdfs:Property" . -}}
                 {{ end -}}
             {{ end -}}
-            {{- range .From }}
+            {{- range .From "http://www.w3.org/2000/01/rdf-schema#subClassOf" }}
                 {{- if .HasPredicate "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" "http://www.w3.org/2000/01/rdf-schema#Class" }} 
                     {{ template "rdfs:type rdfs:Class" . -}}
                 {{ end -}}
