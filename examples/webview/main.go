@@ -46,10 +46,32 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+	w.Header().Add("content-type", "text/html")
+	fmt.Fprint(w, "<!DOCTYPE html>")
+	fmt.Fprint(w, "<html>")
+	fmt.Fprint(w, "<head>")
+	fmt.Fprint(w, `<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>`)
+	fmt.Fprint(w, "</head>")
+	fmt.Fprint(w, "<body>")
+	fmt.Fprintf(w, "<h1>%v</h1>", n.Subject.RawValue())
+	fmt.Fprint(w, `<table border="1" style="border: 1px #ccc;">`)
+	fmt.Fprint(w, "<thead>")
+	fmt.Fprint(w, `<tr><th>Property</th><th>Type</th><th><Description></th></tr>`)
+	fmt.Fprint(w, "</thead>")
+	h.processNode(n, w, nil)
+	fmt.Fprint(w, "</table>")
+	fmt.Fprint(w, "</body></html>")
+}
+
+func (h *handler) processNode(n *graph.Node, w http.ResponseWriter, visited []*graph.Node) {
 	// get the type of the node
 	rdfsType := h.g.Dict["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"]
 	rdfProperty := h.g.Dict["http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"]
 	rdfClass := h.g.Dict["http://www.w3.org/2000/01/rdf-schema#Class"]
+	rdfLabel := h.g.Dict["http://www.w3.org/2000/01/rdf-schema#label"]
+	rdfComment := h.g.Dict["http://www.w3.org/2000/01/rdf-schema#comment"]
+	rdfRangeIncludes := h.g.Dict["http://schema.org/rangeIncludes"]
+	rdfDomainIncludes := h.g.Dict["http://schema.org/domainIncludes"]
 	typ, ok := n.PredicateObject[rdfsType]
 	if !ok {
 		http.Error(w, "Node has no type", http.StatusInternalServerError)
@@ -57,12 +79,70 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	switch typ[0] {
 	case rdfProperty:
-		fmt.Fprintf(w, "This is a property:\n %v", n)
+		fmt.Fprintf(w, `<tr><td><a href="%v">%v</a>`,
+			h.minifyHREF(n.Subject),
+			n.PredicateObject[rdfLabel][0].RawValue())
+		fmt.Fprint(w, "<td>")
+		for _, v := range n.PredicateObject[rdfRangeIncludes] {
+			fmt.Fprintf(w, `<a href="%v">%v</a><br>`, h.minifyHREF(v), h.minifyHREF(v))
+		}
+		fmt.Fprint(w, "</td>")
+		fmt.Fprintf(w, "<td>%v</td>", n.PredicateObject[rdfComment][0].RawValue())
+		fmt.Fprint(w, "</tr>")
+
 	case rdfClass:
-		fmt.Fprintf(w, "This is a class:\n %v", n)
+		fmt.Fprint(w, `<tbody style="border: 1px solid #ccc;">`)
+		fmt.Fprintf(w, `<tr><td colspan="3"><b>Properties from: <a href="%v">%v</a></b> <pre>%v</pre></td></tr>`,
+			h.minifyHREF(n.Subject),
+			h.minifyHREF(n.Subject),
+			n.PredicateObject[rdfComment][0].RawValue(),
+		)
+		// GetProperties
+		it := h.g.DirectedGraph.To(n.ID())
+		for it.Next() {
+			nn := it.Node().(*graph.Node)
+			e := h.g.DirectedGraph.Edge(nn.ID(), n.ID()).(graph.Edge)
+			if e.Term.Equals(rdfDomainIncludes) {
+				if nn.PredicateObject[rdfsType][0].Equals(rdfProperty) {
+					h.processNode(nn, w, nil)
+				}
+			}
+		}
+		// GetClasses
+		it = h.g.DirectedGraph.From(n.ID())
+		for it.Next() {
+			n := it.Node().(*graph.Node)
+			if n.PredicateObject[rdfsType][0].Equals(rdfClass) {
+				h.processNode(n, w, nil)
+			}
+		}
+		//var class *graph.Node
+		//h.processNode(prop,w)
+
+		fmt.Fprint(w, "</tbody>")
 	default:
 		fmt.Fprintf(w, "This is something else:\n %v", n)
 	}
+
+}
+
+// minifyHREF returns a string with the nameprefix
+func (h *handler) minifyHREF(t rdf.Term) string {
+	found := false
+	for k := range h.g.Reference {
+		if k.Equals(t) {
+			found = true
+		}
+	}
+	if !found {
+		return t.RawValue()
+	}
+	for k, v := range h.namespaces {
+		if strings.Contains(t.RawValue(), v.RawValue()) {
+			return "/" + strings.Replace(t.RawValue(), v.RawValue(), k+":", -1)
+		}
+	}
+	return t.RawValue()
 }
 
 func (h *handler) getNode(s string) (*graph.Node, error) {
