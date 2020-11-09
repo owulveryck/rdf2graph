@@ -137,38 +137,3 @@ func Apply(w io.Writer, tmpl *template.Template, name, nodeSubject string, g *gr
 	}
 	return nil
 }
-
-// Has s as a predicate
-/*
-func main() {
-	tmpl, err := template.New("render").ParseFiles("test.tmpl")
-	if err != nil {
-		log.Fatal(err)
-	}
-	baseURI := "https://example.org/foo"
-	f, err := os.Open("../../../client/schemaorg-current-http.ttl")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-	// Create a new graph
-
-	parser := rdf.NewParser(baseURI)
-	gr, err := parser.Parse(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-	g := graph.NewGraph(gr)
-	it := g.Nodes()
-	for it.Next() {
-		n := it.Node().(*graph.Node)
-		if n.Subject.RawValue() == "http://schema.org/PostalAddress" {
-			tmpl.ExecuteTemplate(os.Stdout, "main", Current{
-				Graph: &g,
-				Node:  n,
-			})
-		}
-	}
-}
-
-*/
