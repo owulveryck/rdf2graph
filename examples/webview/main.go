@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -16,12 +17,13 @@ import (
 )
 
 func main() {
+	templateFile := flag.String("template", "index.tmpl", "template file definition")
+	addr := flag.String("addr", ":8080", "Listen address")
+	baseURI := flag.String("baseURI", "https://example.org/foo", "The base uri for namespaces")
 
-	// Set a base URI
-	baseURI := "https://example.org/foo"
-	// Create a new graph
+	flag.Parse()
 
-	parser := rdf.NewParser(baseURI)
+	parser := rdf.NewParser(*baseURI)
 	gr, err := parser.Parse(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
@@ -31,7 +33,7 @@ func main() {
 		namespaces: parser.GetNamespaces(),
 		g:          g,
 	}
-	b, err := ioutil.ReadFile("index.tmpl")
+	b, err := ioutil.ReadFile(*templateFile)
 	if err != nil {
 		log.Fatal(err)
 
@@ -43,7 +45,7 @@ func main() {
 	h.tmpl = tmpl
 	http.Handle("/", h)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	err = http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(*addr, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,6 +59,10 @@ type handler struct {
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := path.Base(r.URL.Path)
+	if name == "/" {
+		h.Index(w, r)
+		return
+	}
 	n, err := h.getNode(name)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -110,5 +116,14 @@ func (h *handler) getNode(s string) (string, error) {
 		return "", fmt.Errorf("No node found for term %v", term)
 	}
 	return term.RawValue(), nil
+
+}
+
+func (h *handler) Index(w http.ResponseWriter, r *http.Request) {
+	it := h.g.Nodes()
+	for it.Next() {
+		n := it.Node().(*graph.Node)
+		fmt.Fprintf(w, `<a href="%v">%v</a><br>`, h.MinifyHREF(n.Subject.RawValue()), h.MinifyHREF(n.Subject.RawValue()))
+	}
 
 }
