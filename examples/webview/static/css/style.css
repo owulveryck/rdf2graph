@@ -12,9 +12,14 @@ table.blueTable {
   table.blueTable tbody td {
     font-size: 13px;
   }
+  table.blueTable tbody:nth-child(even) {
+    background: #D0E4F5;
+  }
+  /*
   table.blueTable tr:nth-child(even) {
     background: #D0E4F5;
   }
+  */
   table.blueTable thead {
     background: #1C6EA4;
     background: -moz-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);

@@ -3,13 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path"
 	"strings"
+	"text/template"
 
 	rdf "github.com/owulveryck/gon3"
 	"github.com/owulveryck/rdf2graph/graph"

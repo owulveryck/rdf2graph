@@ -1,9 +1,9 @@
 package template
 
 import (
-	"html/template"
 	"io"
 	"log"
+	"text/template"
 
 	rdf "github.com/owulveryck/gon3"
 	"github.com/owulveryck/rdf2graph/graph"
