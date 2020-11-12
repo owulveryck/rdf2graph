@@ -63,7 +63,7 @@ func (e Edge) Attributes() []encoding.Attribute {
 }
 
 func wrap(text string) string {
-	lineWidth := 35
+	lineWidth := 40
 	words := strings.Fields(strings.TrimSpace(text))
 	if len(words) == 0 {
 		return text
@@ -72,7 +72,7 @@ func wrap(text string) string {
 	spaceLeft := lineWidth - len(wrapped)
 	for _, word := range words[1:] {
 		if len(word)+1 > spaceLeft {
-			wrapped += `"<br/>"` + word
+			wrapped += `<br/>` + word
 			spaceLeft = lineWidth - len(word)
 		} else {
 			wrapped += " " + word
