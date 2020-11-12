@@ -3,6 +3,7 @@ package template
 import (
 	"io"
 	"log"
+	"sort"
 	"text/template"
 
 	rdf "github.com/owulveryck/gon3"
@@ -75,6 +76,7 @@ func (g Current) To(links ...string) []Current {
 			}
 		}
 	}
+	sort.Sort(bySubject(ns))
 	return ns
 }
 
@@ -104,6 +106,7 @@ func (g Current) From(links ...string) []Current {
 			}
 		}
 	}
+	sort.Sort(bySubject(ns))
 	return ns
 }
 func (g *Current) linkToTerm(s string) rdf.Term {
