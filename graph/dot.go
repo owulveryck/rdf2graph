@@ -83,11 +83,11 @@ func wrap(text string) string {
 }
 
 const tmpl = `<<table border='1' cellborder='1'>
-	   <tr><td colspan="2" bgcolor="lightblue">"{{ .Subject.RawValue | htmlescape}}"</td></tr>
+	   <tr><td colspan="2" bgcolor="lightblue">{{ .Subject.RawValue | htmlescape}}</td></tr>
 	   <tr><td bgcolor="lightgrey">Predicate</td><td bgcolor="lightgrey">object</td></tr>
 	   {{range $key, $value := .PredicateObject -}}
 	   {{range $value -}}
-	   <tr><td>"{{ $key.RawValue | htmlescape }}"</td><td>"{{.RawValue | htmlescape | wrap }}"</td></tr>
+	   <tr><td>{{ $key.RawValue | htmlescape }}</td><td>{{.RawValue | htmlescape | wrap }}</td></tr>
 	   {{end -}}
 	   {{end -}}
 	 </table>>`
