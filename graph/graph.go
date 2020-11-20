@@ -83,6 +83,8 @@ func NewGraph(rdfGraph *rdf.Graph) Graph {
 }
 
 // Graph is carrying the information
+//
+// BUG: the simple graph does not handle multiple edges between two identical nodes
 type Graph struct {
 	*simple.DirectedGraph
 	// Reference of the term and their associated nodes
